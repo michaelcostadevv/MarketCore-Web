@@ -76,3 +76,13 @@ async function lerJson<T>(resposta: Response): Promise<T | null> {
     return null
   }
 }
+
+/**
+ * Regra de nova tentativa para o TanStack Query (opção "retry").
+ * Erros 4xx (404, 401, 422...) não mudam se repetirmos a chamada: mostramos na hora.
+ * Falha de rede (status 0) e 5xx podem ser passageiros: tentamos mais uma vez.
+ */
+export function deveTentarDeNovo(tentativasFeitas: number, erro: unknown): boolean {
+  if (erro instanceof ApiError && erro.status >= 400 && erro.status < 500) return false
+  return tentativasFeitas < 1
+}

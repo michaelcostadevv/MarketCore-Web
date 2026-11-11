@@ -16,7 +16,7 @@ export function ProdutoCard({ produto }: { produto: Produto }) {
         <h2 className="line-clamp-2 font-medium text-slate-900 group-hover:text-indigo-700">
           {produto.nome}
         </h2>
-        <div className="mt-auto flex items-center justify-between pt-2">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-2">
           <span className="text-lg font-semibold text-slate-900">{formatarPreco(produto.preco)}</span>
           {esgotado && (
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">

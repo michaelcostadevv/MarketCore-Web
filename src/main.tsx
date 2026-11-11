@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
+import { deveTentarDeNovo } from './api/client'
 import App from './App.tsx'
 import './index.css'
 
@@ -10,7 +11,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000, // por 30s os dados são "frescos": voltar a uma página não chama a API de novo
-      retry: 1,
+      retry: deveTentarDeNovo,
     },
   },
 })

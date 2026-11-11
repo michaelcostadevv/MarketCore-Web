@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { api, ApiError, setOnUnauthorized, setTokenProvider } from './client'
+import { api, ApiError, deveTentarDeNovo, setOnUnauthorized, setTokenProvider } from './client'
 
 /** Simula uma resposta do fetch com corpo JSON (ou sem corpo, se body for undefined). */
 function respostaFalsa(status: number, body?: unknown) {
@@ -116,5 +116,18 @@ describe('api()', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 204 })))
 
     await expect(api('/produtos/1', { method: 'DELETE' })).resolves.toBeUndefined()
+  })
+})
+
+describe('deveTentarDeNovo()', () => {
+  it('não repete erros 4xx: a resposta seria a mesma', () => {
+    expect(deveTentarDeNovo(0, new ApiError(404, 'Produto não encontrado'))).toBe(false)
+    expect(deveTentarDeNovo(0, new ApiError(401, 'Token expirado'))).toBe(false)
+  })
+
+  it('repete uma vez falhas de rede e erros 5xx', () => {
+    expect(deveTentarDeNovo(0, new ApiError(0, 'Não foi possível conectar à API'))).toBe(true)
+    expect(deveTentarDeNovo(0, new ApiError(503, 'Indisponível'))).toBe(true)
+    expect(deveTentarDeNovo(1, new ApiError(503, 'Indisponível'))).toBe(false)
   })
 })
