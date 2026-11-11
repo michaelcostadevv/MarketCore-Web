@@ -1,4 +1,5 @@
-import { Link, Outlet, useLocation } from 'react-router'
+import { Link, Outlet, useLocation, useNavigate } from 'react-router'
+import { useAuth } from '../auth/useAuth'
 import { LimiteDeErro } from './LimiteDeErro'
 
 /** Estrutura comum a todas as páginas: cabeçalho, conteúdo (Outlet) e rodapé. */
@@ -12,6 +13,7 @@ export function Layout() {
           <Link to="/" className="text-lg font-bold tracking-tight text-slate-900">
             Market<span className="text-indigo-600">Core</span>
           </Link>
+          <MenuUsuario />
         </div>
       </header>
 
@@ -26,5 +28,52 @@ export function Layout() {
         MarketCore · projeto de estudo
       </footer>
     </div>
+  )
+}
+
+/** Lado direito do cabeçalho: "Entrar" para visitantes, nome + "Sair" para quem está logado. */
+function MenuUsuario() {
+  const { usuario, carregando, logout } = useAuth()
+  const navigate = useNavigate()
+
+  if (carregando) return null // evita "piscar" o botão Entrar enquanto confirma o token salvo
+
+  if (!usuario) {
+    return (
+      <nav className="flex items-center gap-2 text-sm">
+        <Link to="/login" className="rounded-lg px-3 py-2 font-medium text-slate-700 hover:bg-slate-100">
+          Entrar
+        </Link>
+        <Link
+          to="/cadastro"
+          className="hidden rounded-lg bg-indigo-600 px-3 py-2 font-medium text-white hover:bg-indigo-700 sm:block"
+        >
+          Criar conta
+        </Link>
+      </nav>
+    )
+  }
+
+  function sair() {
+    logout()
+    navigate('/')
+  }
+
+  return (
+    <nav className="flex items-center gap-3 text-sm">
+      <span className="max-w-[10rem] truncate text-slate-600 sm:max-w-xs" title={usuario.email}>
+        Olá, <span className="font-medium text-slate-900">{usuario.nome ?? usuario.email}</span>
+      </span>
+      {usuario.admin && (
+        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">admin</span>
+      )}
+      <button
+        type="button"
+        onClick={sair}
+        className="rounded-lg px-3 py-2 font-medium text-slate-700 hover:bg-slate-100"
+      >
+        Sair
+      </button>
+    </nav>
   )
 }
