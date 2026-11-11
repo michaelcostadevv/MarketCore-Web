@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router'
 import { deveTentarDeNovo } from './api/client'
 import App from './App.tsx'
 import { AuthProvider } from './auth/AuthProvider'
+import { CarrinhoProvider } from './carrinho/CarrinhoProvider'
 import './index.css'
 
 // Cache compartilhado de todas as chamadas à API feitas pelo TanStack Query
@@ -22,9 +23,11 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       {/* AuthProvider dentro do QueryClientProvider: ele usa o cache para guardar o usuário logado */}
       <AuthProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <CarrinhoProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </CarrinhoProvider>
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,
