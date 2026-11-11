@@ -1,0 +1,37 @@
+name: CI
+
+# Roda em todo push na main e em todo pull request:
+# nada entra na main sem passar por lint, typecheck, testes e build.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Instalar o Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm # reaproveita o cache do npm entre execuções
+
+      # npm ci instala exatamente as versões do package-lock.json (build reproduzível)
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Testes
+        run: npm test
+
+      - name: Build
+        run: npm run build
