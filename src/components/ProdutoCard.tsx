@@ -8,7 +8,7 @@ export function ProdutoCard({ produto }: { produto: Produto }) {
   return (
     <Link
       to={`/produtos/${produto.id}`}
-      className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-indigo-300 hover:shadow-md"
+      className="group flex w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-indigo-300 hover:shadow-md"
     >
       <ImagemProduto produto={produto} className="aspect-square" />
 
