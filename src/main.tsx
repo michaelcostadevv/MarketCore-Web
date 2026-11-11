@@ -1,10 +1,27 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './index.css'
+import { BrowserRouter } from 'react-router'
+import { deveTentarDeNovo } from './api/client'
 import App from './App.tsx'
+import './index.css'
+
+// Cache compartilhado de todas as chamadas à API feitas pelo TanStack Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000, // por 30s os dados são "frescos": voltar a uma página não chama a API de novo
+      retry: deveTentarDeNovo,
+    },
+  },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </QueryClientProvider>
   </StrictMode>,
 )

@@ -16,10 +16,12 @@ Frontend da loja **MarketCore**, construído em React, consumindo a
 
 ## ⚙️ Funcionalidades (v1)
 
-* Vitrine pública com busca e paginação, e detalhe do produto
-* Login e cadastro com JWT; o cabeçalho mostra quem está logado (`/auth/me`)
-* Carrinho e finalização de pedido
-* "Meus pedidos", com detalhe e cancelamento
+* ✅ Vitrine pública com busca e paginação, e detalhe do produto
+* 🚧 Login e cadastro com JWT; o cabeçalho mostra quem está logado (`/auth/me`)
+* 🚧 Carrinho e finalização de pedido
+* 🚧 "Meus pedidos", com detalhe e cancelamento
+
+✅ pronto · 🚧 planejado
 
 O design e o plano estão em [`docs/specs`](docs/specs) e [`docs/plans`](docs/plans).
 
