@@ -1,32 +1,92 @@
-# React + TypeScript + Vite
+# 🛒 MarketCore Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+[![CI](https://github.com/michaelcostadevv/MarketCore-Web/actions/workflows/ci.yml/badge.svg)](https://github.com/michaelcostadevv/MarketCore-Web/actions/workflows/ci.yml)
 
-Currently, two official plugins are available:
+Frontend da loja **MarketCore**, construído em React, consumindo a
+[MarketCore API](https://github.com/michaelcostadevv/MarketCore-Spring) (Spring Boot + JWT).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Tecnologias
 
-## React Compiler
+* **React 19 + TypeScript**, empacotado com **Vite**
+* **React Router**: navegação entre páginas
+* **TanStack Query**: busca e cache dos dados da API
+* **Tailwind CSS**: estilo
+* **Vitest + Testing Library**: testes
+* **oxlint**: lint
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ⚙️ Funcionalidades (v1)
 
-## Expanding the Oxlint configuration
+* Vitrine pública com busca e paginação, e detalhe do produto
+* Login e cadastro com JWT; o cabeçalho mostra quem está logado (`/auth/me`)
+* Carrinho e finalização de pedido
+* "Meus pedidos", com detalhe e cancelamento
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+O design e o plano estão em [`docs/specs`](docs/specs) e [`docs/plans`](docs/plans).
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+## 🛠️ Como rodar (front + API)
+
+### Pré-requisitos
+
+* Node.js 24+
+* A **MarketCore API** rodando em `http://localhost:8080`
+
+### 1. Suba a API
+
+No repositório [MarketCore-Spring](https://github.com/michaelcostadevv/MarketCore-Spring):
+
+```bash
+cp .env.example .env
+docker compose up --build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Confira em http://localhost:8080/swagger-ui.html.
+
+### 2. Suba o front
+
+Neste repositório:
+
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Abra **http://localhost:5173**.
+
+> **Por que a porta 5173?** A API só aceita chamadas do navegador vindas das origens liberadas
+> no CORS (`CORS_ALLOWED_ORIGINS`, padrão `http://localhost:5173`). O `vite.config.ts` fixa essa
+> porta com `strictPort`: se ela estiver ocupada, o Vite falha em vez de subir em outra porta e
+> causar erros de CORS difíceis de entender.
+
+### Variáveis de ambiente
+
+| Variável | Padrão | Para quê |
+|---|---|---|
+| `VITE_API_URL` | `http://localhost:8080` | Endereço da API |
+
+Só variáveis com prefixo `VITE_` chegam ao código do navegador. Por isso, **nunca** coloque
+segredos nelas: tudo que vai para o front é público.
+
+## 📜 Scripts
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento com recarga automática |
+| `npm run lint` | Procura problemas no código (oxlint) |
+| `npm run typecheck` | Checa os tipos do TypeScript |
+| `npm test` | Roda os testes (Vitest) |
+| `npm run build` | Gera a versão de produção em `dist/` |
+
+O CI do GitHub Actions roda `lint`, `typecheck`, `test` e `build` em todo push e pull request.
+
+## 🔐 Sobre o token JWT
+
+O token fica no `localStorage` para o login sobreviver a um F5. A desvantagem: se o site
+tivesse uma falha de XSS, um script malicioso conseguiria lê-lo. A alternativa mais segura é
+um cookie `httpOnly`, que o JavaScript não lê, mas isso exige mudanças na API. Fica como
+melhoria futura.
+
+## 🪟 Nota para Windows com Smart App Control
+
+O projeto usa **Vite 7**. O Vite 8 usa o Rolldown, cujo binário nativo é bloqueado pelo
+Smart App Control do Windows 11 ("An Application Control policy has blocked this file").
