@@ -11,6 +11,8 @@ export type ValorCarrinho = {
   adicionar: (produto: Produto, quantidade?: number) => void
   alterarQuantidade: (produtoId: number, quantidade: number) => void
   remover: (produtoId: number) => void
+  /** Troca todos os itens de uma vez (usado ao sincronizar com a API). */
+  substituir: (itens: ItemCarrinho[]) => void
   limpar: () => void
 }
 

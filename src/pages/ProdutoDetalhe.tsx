@@ -58,16 +58,21 @@ function Detalhe({ id }: { id: number }) {
 }
 
 function AdicionarAoCarrinho({ produto }: { produto: Produto }) {
-  const { adicionar } = useCarrinho()
+  const { itens, adicionar } = useCarrinho()
   // Guardamos o texto do campo (e não um número) para a pessoa poder apagar e digitar livremente
   const [quantidade, setQuantidade] = useState('1')
-  const [adicionado, setAdicionado] = useState(false)
+  const [resultado, setResultado] = useState<'adicionado' | 'no-limite' | null>(null)
   const esgotado = produto.quantidade <= 0
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
+    const noCarrinho = itens.find((i) => i.produto.id === produto.id)?.quantidade ?? 0
+    if (noCarrinho >= produto.quantidade) {
+      setResultado('no-limite') // nada a adicionar: não dizemos "Adicionado"
+      return
+    }
     adicionar(produto, Number(quantidade)) // as regras do carrinho limitam entre 1 e o estoque
-    setAdicionado(true)
+    setResultado('adicionado')
   }
 
   return (
@@ -84,7 +89,7 @@ function AdicionarAoCarrinho({ produto }: { produto: Produto }) {
               value={quantidade}
               onChange={(e) => {
                 setQuantidade(e.target.value)
-                setAdicionado(false)
+                setResultado(null)
               }}
               className="h-11 w-20 rounded-lg border border-slate-300 px-3 text-center"
             />
@@ -98,14 +103,15 @@ function AdicionarAoCarrinho({ produto }: { produto: Produto }) {
           {esgotado ? 'Esgotado' : 'Adicionar ao carrinho'}
         </button>
       </div>
-      {adicionado && (
-        <p role="status" className="text-sm text-emerald-700">
-          Adicionado ao carrinho.{' '}
+      <p role="status" className={resultado === 'no-limite' ? 'text-sm text-amber-700' : 'text-sm text-emerald-700'}>
+        {resultado === 'adicionado' && 'Adicionado ao carrinho. '}
+        {resultado === 'no-limite' && `Você já tem todo o estoque disponível (${produto.quantidade}) no carrinho. `}
+        {resultado !== null && (
           <Link to="/carrinho" className="font-medium underline">
             Ver carrinho
           </Link>
-        </p>
-      )}
+        )}
+      </p>
     </form>
   )
 }

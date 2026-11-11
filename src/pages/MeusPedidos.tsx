@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ROTULOS_STATUS, STATUS_PEDIDO, useMeusPedidos } from '../api/pedidos'
 import type { Pedido, StatusPedido } from '../api/types'
@@ -23,6 +24,17 @@ export function MeusPedidos() {
     page: pagina - 1,
     size: POR_PAGINA,
   })
+
+  // Página além da última (link antigo, ou cancelou o único pedido da última página com filtro):
+  // leva para a última página, em vez de dizer que não há pedidos
+  const totalPaginas = data?.page.totalPages ?? 0
+  useEffect(() => {
+    if (totalPaginas > 0 && pagina > totalPaginas) {
+      const corrigidos = new URLSearchParams(params)
+      corrigidos.set('pagina', String(totalPaginas))
+      setParams(corrigidos, { replace: true })
+    }
+  }, [pagina, totalPaginas, params, setParams])
 
   function filtrar(novo: string) {
     setParams(novo ? { status: novo } : {}) // novo filtro volta para a página 1

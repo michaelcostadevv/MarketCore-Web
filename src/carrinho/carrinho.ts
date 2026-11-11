@@ -1,4 +1,5 @@
 import type { Produto } from '../api/types'
+import { formatarPreco } from '../lib/formatar'
 
 // Regras do carrinho como FUNÇÕES PURAS: recebem os itens e devolvem um array novo,
 // sem efeitos colaterais e sem React. São fáceis de testar e de reaproveitar.
@@ -35,6 +36,62 @@ export function alterarQuantidade(itens: ItemCarrinho[], produtoId: number, quan
 
 export function remover(itens: ItemCarrinho[], produtoId: number): ItemCarrinho[] {
   return itens.filter((i) => i.produto.id !== produtoId)
+}
+
+export type ResultadoSincronizacao = {
+  itens: ItemCarrinho[]
+  /** Frases para mostrar ao usuário explicando o que mudou. */
+  avisos: string[]
+  mudou: boolean
+}
+
+/**
+ * Confere o carrinho com os produtos atuais da API.
+ *
+ * @param atuais produto atual por id; null = não existe mais (404). Ids ausentes do mapa
+ *               (ex.: falha de rede ao conferir) ficam como estão.
+ */
+export function sincronizar(itens: ItemCarrinho[], atuais: Map<number, Produto | null>): ResultadoSincronizacao {
+  const avisos: string[] = []
+  let mudou = false
+  const novos: ItemCarrinho[] = []
+
+  for (const item of itens) {
+    if (!atuais.has(item.produto.id)) {
+      novos.push(item)
+      continue
+    }
+    const atual = atuais.get(item.produto.id) ?? null
+    const nome = item.produto.nome
+
+    if (atual === null) {
+      avisos.push(`"${nome}" não está mais à venda e saiu do carrinho.`)
+      mudou = true
+      continue
+    }
+    if (atual.quantidade <= 0) {
+      avisos.push(`"${nome}" esgotou e saiu do carrinho.`)
+      mudou = true
+      continue
+    }
+
+    const quantidade = Math.min(item.quantidade, atual.quantidade)
+    if (quantidade < item.quantidade) {
+      avisos.push(`A quantidade de "${nome}" foi ajustada para ${quantidade} (estoque disponível).`)
+    }
+    if (atual.preco !== item.produto.preco) {
+      avisos.push(`O preço de "${nome}" mudou para ${formatarPreco(atual.preco)}.`)
+    }
+    if (quantidade !== item.quantidade || JSON.stringify(atual) !== JSON.stringify(item.produto)) {
+      mudou = true
+      novos.push({ produto: atual, quantidade })
+    } else {
+      novos.push(item)
+    }
+  }
+
+  // Sem mudanças, devolve o MESMO array: o React não renderiza de novo à toa
+  return { itens: mudou ? novos : itens, avisos, mudou }
 }
 
 /**

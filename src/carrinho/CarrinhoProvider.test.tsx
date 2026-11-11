@@ -44,12 +44,29 @@ describe('CarrinhoProvider', () => {
     ['formato errado', '{"produto": 1}'],
     ['item sem produto', '[{"quantidade": 2}]'],
   ])('ignora um carrinho salvo inválido (%s) em vez de quebrar a página', (_caso, salvo) => {
+    // (um item inválido não derruba os outros: ver o teste abaixo)
     localStorage.setItem(CHAVE_CARRINHO, salvo)
     vi.stubGlobal('fetch', vi.fn(rotasFalsas({})))
 
     renderizarComProvedores(<Painel />)
 
     expect(screen.getByText('0 itens · total 0 ·')).toBeInTheDocument()
+  })
+
+  it('descarta só os itens inválidos, mantendo os bons', () => {
+    localStorage.setItem(
+      CHAVE_CARRINHO,
+      JSON.stringify([
+        { produto: teclado, quantidade: 2 },
+        { produto: { ...mouse, preco: -5 }, quantidade: 1 },
+        { produto: mouse, quantidade: 0 },
+      ]),
+    )
+    vi.stubGlobal('fetch', vi.fn(rotasFalsas({})))
+
+    renderizarComProvedores(<Painel />)
+
+    expect(screen.getByText('2 itens · total 399.8 · Teclado')).toBeInTheDocument()
   })
 
   it('limpar esvazia o carrinho', async () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ApiError } from '../api/client'
 import { podeCancelar, useCancelarPedido, usePedido } from '../api/pedidos'
@@ -16,6 +16,7 @@ export function PedidoDetalhe() {
 
 function Detalhe({ id }: { id: number }) {
   const { data: pedido, isPending, error } = usePedido(id)
+  const [cancelado, setCancelado] = useState(false)
 
   if (isPending) {
     return (
@@ -45,12 +46,21 @@ function Detalhe({ id }: { id: number }) {
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
         <table className="w-full text-sm">
+          <caption className="sr-only">Itens do pedido #{pedido.id}</caption>
           <thead className="border-b border-slate-200 bg-slate-50 text-left text-slate-600">
             <tr>
-              <th className="px-4 py-3 font-medium">Produto</th>
-              <th className="px-4 py-3 text-right font-medium">Qtd.</th>
-              <th className="px-4 py-3 text-right font-medium">Preço unit.</th>
-              <th className="px-4 py-3 text-right font-medium">Subtotal</th>
+              <th scope="col" className="px-4 py-3 font-medium">
+                Produto
+              </th>
+              <th scope="col" className="px-4 py-3 text-right font-medium">
+                Qtd.
+              </th>
+              <th scope="col" className="px-4 py-3 text-right font-medium">
+                Preço unit.
+              </th>
+              <th scope="col" className="px-4 py-3 text-right font-medium">
+                Subtotal
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -69,9 +79,9 @@ function Detalhe({ id }: { id: number }) {
           </tbody>
           <tfoot className="border-t border-slate-200">
             <tr>
-              <td colSpan={3} className="px-4 py-3 text-right font-medium text-slate-600">
+              <th scope="row" colSpan={3} className="px-4 py-3 text-right font-medium text-slate-600">
                 Total
-              </td>
+              </th>
               <td data-testid="total" className="px-4 py-3 text-right text-base font-bold text-slate-900">
                 {formatarPreco(pedido.valorTotal)}
               </td>
@@ -80,21 +90,42 @@ function Detalhe({ id }: { id: number }) {
         </table>
       </div>
 
-      {podeCancelar(pedido.statusPedido) && <Cancelamento id={pedido.id} />}
+      {podeCancelar(pedido.statusPedido) && <Cancelamento id={pedido.id} aoCancelar={() => setCancelado(true)} />}
+
+      {/* Região viva: anuncia o resultado para leitores de tela (o botão some depois do cancelamento) */}
+      <p role="status" className="text-sm text-emerald-700">
+        {cancelado && 'Pedido cancelado. Os itens voltaram para o estoque.'}
+      </p>
     </article>
   )
 }
 
 /** Cancelar não tem volta: pedimos confirmação na própria página (sem o window.confirm do navegador). */
-function Cancelamento({ id }: { id: number }) {
+function Cancelamento({ id, aoCancelar }: { id: number; aoCancelar: () => void }) {
   const [confirmando, setConfirmando] = useState(false)
   const cancelar = useCancelarPedido()
+  const botaoCancelar = useRef<HTMLButtonElement>(null)
+  const botaoConfirmar = useRef<HTMLButtonElement>(null)
+  const devolverFoco = useRef(false)
+
+  // Foco do teclado: o botão clicado some quando a confirmação abre (e vice-versa).
+  // Sem isso o foco cairia no <body> e quem navega pelo teclado teria de recomeçar do topo.
+  useEffect(() => {
+    if (confirmando) botaoConfirmar.current?.focus()
+    else if (devolverFoco.current) botaoCancelar.current?.focus()
+  }, [confirmando])
+
+  function desistir() {
+    devolverFoco.current = true
+    setConfirmando(false)
+  }
 
   return (
     <div className="flex flex-col items-start gap-3">
       {cancelar.isError && <MensagemErro erro={cancelar.error} />}
       {!confirmando ? (
         <button
+          ref={botaoCancelar}
           type="button"
           onClick={() => setConfirmando(true)}
           className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
@@ -105,16 +136,22 @@ function Cancelamento({ id }: { id: number }) {
         <div className="flex flex-wrap items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm">
           <span className="text-red-800">Cancelar este pedido? Os itens voltam para o estoque.</span>
           <button
+            ref={botaoConfirmar}
             type="button"
             disabled={cancelar.isPending}
-            onClick={() => cancelar.mutate(id, { onSettled: () => setConfirmando(false) })}
+            onClick={() =>
+              cancelar.mutate(id, {
+                onSuccess: aoCancelar,
+                onError: desistir,
+              })
+            }
             className="rounded-lg bg-red-600 px-3 py-1.5 font-medium text-white hover:bg-red-700 disabled:opacity-60"
           >
             {cancelar.isPending ? 'Cancelando…' : 'Sim, cancelar'}
           </button>
           <button
             type="button"
-            onClick={() => setConfirmando(false)}
+            onClick={desistir}
             className="rounded-lg px-3 py-1.5 font-medium text-slate-700 hover:bg-white"
           >
             Não

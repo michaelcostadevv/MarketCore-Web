@@ -34,7 +34,7 @@ export function fetchRespondendo(body: unknown, status = 200): typeof fetch {
     )
 }
 
-type RespostaFalsa = [status: number, body?: unknown]
+export type RespostaFalsa = [status: number, body?: unknown]
 
 /**
  * fetch falso que responde conforme "MÉTODO /caminho" (sem a query string).

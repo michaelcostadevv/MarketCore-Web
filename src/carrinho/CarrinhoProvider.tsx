@@ -34,6 +34,7 @@ export function CarrinhoProvider({ children }: { children: ReactNode }) {
       alterarQuantidade: (produtoId, quantidade) =>
         setItens((atuais) => regras.alterarQuantidade(atuais, produtoId, quantidade)),
       remover: (produtoId) => setItens((atuais) => regras.remover(atuais, produtoId)),
+      substituir: setItens,
       limpar: () => setItens([]),
     }),
     [itens],

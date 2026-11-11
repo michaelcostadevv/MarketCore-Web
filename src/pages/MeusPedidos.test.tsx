@@ -74,6 +74,27 @@ describe('MeusPedidos', () => {
     )
   })
 
+  it('volta para a última página quando a URL pede uma página que não existe', async () => {
+    comTokenSalvo()
+    const fetchFalso = vi.fn<typeof fetch>((url) => {
+      const u = new URL(String(url))
+      if (u.pathname === '/auth/me') return Promise.resolve(Response.json(maria))
+      const vazia = u.searchParams.get('page') === '8'
+      return Promise.resolve(
+        Response.json({
+          content: vazia ? [] : [pedido()],
+          page: { size: 10, number: Number(u.searchParams.get('page')), totalElements: 11, totalPages: 2 },
+        }),
+      )
+    })
+    vi.stubGlobal('fetch', fetchFalso)
+
+    renderizar('/pedidos?pagina=9')
+
+    expect(await screen.findByText('Página 2 de 2')).toBeInTheDocument()
+    expect(screen.queryByText('Você ainda não fez nenhum pedido')).not.toBeInTheDocument()
+  })
+
   it('ignora status inválido na URL', async () => {
     comTokenSalvo()
     const fetchFalso = vi.fn(

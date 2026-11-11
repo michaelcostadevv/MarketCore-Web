@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { CHAVE_CARRINHO } from '../carrinho/armazenamento'
-import { teclado } from '../test/dados'
+import { comCarrinhoSalvo, teclado } from '../test/dados'
 import { renderizarComProvedores, rotasFalsas } from '../test/renderizar'
 import { ProdutoDetalhe } from './ProdutoDetalhe'
 
@@ -39,6 +39,16 @@ describe('ProdutoDetalhe', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Adicionado ao carrinho')
     expect(screen.getByRole('link', { name: 'Ver carrinho' })).toHaveAttribute('href', '/carrinho')
     expect(JSON.parse(localStorage.getItem(CHAVE_CARRINHO) ?? '[]')).toEqual([{ produto: teclado, quantidade: 3 }])
+  })
+
+  it('avisa quando o carrinho já tem todo o estoque (em vez de dizer "Adicionado")', async () => {
+    comCarrinhoSalvo([{ produto: teclado, quantidade: 5 }]) // estoque: 5
+    vi.stubGlobal('fetch', vi.fn(rotasFalsas({ 'GET /produtos/1': [200, teclado] })))
+    renderizar('/produtos/1')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Adicionar ao carrinho' }))
+
+    expect(screen.getByRole('status')).toHaveTextContent('Você já tem todo o estoque disponível (5) no carrinho.')
   })
 
   it('produto esgotado não pode ir para o carrinho', async () => {

@@ -81,11 +81,22 @@ function aoMudarPedido(queryClient: ReturnType<typeof useQueryClient>, pedido: P
   void queryClient.invalidateQueries({ queryKey: ['produtos'] })
 }
 
-export function useCriarPedido() {
+/**
+ * @param aoCriar roda quando o pedido é criado, MESMO que a página já tenha sido fechada.
+ *   (O onSuccess passado em mutate() não roda se o componente desmontou: se o carrinho fosse
+ *   esvaziado ali, sair da página durante o envio deixaria os itens e geraria pedido duplicado.)
+ */
+export function useCriarPedido({ aoCriar }: { aoCriar?: (pedido: Pedido) => void } = {}) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: criarPedido,
-    onSuccess: (pedido) => aoMudarPedido(queryClient, pedido),
+    onSuccess: (pedido) => {
+      aoMudarPedido(queryClient, pedido)
+      aoCriar?.(pedido)
+    },
+    // Recusado (estoque, produto removido...): os produtos mudaram na API. Buscar de novo
+    // faz o carrinho se conferir e explicar o que mudou.
+    onError: () => void queryClient.invalidateQueries({ queryKey: ['produtos'] }),
   })
 }
 
@@ -94,5 +105,7 @@ export function useCancelarPedido() {
   return useMutation({
     mutationFn: cancelarPedido,
     onSuccess: (pedido) => aoMudarPedido(queryClient, pedido),
+    // Recusado: o status provavelmente mudou (ex.: o pedido foi enviado). Busca o real.
+    onError: (_erro, id) => void queryClient.invalidateQueries({ queryKey: chaves.detalhe(id) }),
   })
 }

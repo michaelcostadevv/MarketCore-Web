@@ -54,6 +54,65 @@ describe('PedidoDetalhe', () => {
     expect(screen.queryByRole('button', { name: 'Cancelar pedido' })).not.toBeInTheDocument()
   })
 
+  it('cuida do foco do teclado e anuncia o cancelamento', async () => {
+    comTokenSalvo()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        rotasFalsas({
+          'GET /auth/me': [200, maria],
+          'GET /pedidos/5': [200, pedido()],
+          'PATCH /pedidos/5/status': [200, pedido({ statusPedido: 'CANCELADO' })],
+        }),
+      ),
+    )
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar pedido' }))
+    expect(screen.getByRole('button', { name: 'Sim, cancelar' })).toHaveFocus()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Não' }))
+    expect(screen.getByRole('button', { name: 'Cancelar pedido' })).toHaveFocus()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar pedido' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, cancelar' }))
+    expect(await screen.findByRole('status')).toHaveTextContent('Pedido cancelado')
+  })
+
+  it('se o cancelamento for recusado, busca o pedido de novo para mostrar o status real', async () => {
+    comTokenSalvo()
+    let statusNaApi: StatusPedido = 'PAGO'
+    const rotas = rotasFalsas({
+      'GET /auth/me': [200, maria],
+      'PATCH /pedidos/5/status': [
+        422,
+        { status: 422, mensagem: 'Não é possível mudar o status de ENVIADO para CANCELADO', detalhes: [] },
+      ],
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>((url, init) => {
+        if (init?.method === 'PATCH') statusNaApi = 'ENVIADO' // o admin enviou nesse meio-tempo
+        if (String(url).endsWith('/pedidos/5') && !init?.method) {
+          return Promise.resolve(
+            new Response(JSON.stringify(pedido({ statusPedido: statusNaApi })), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          )
+        }
+        return rotas(url, init)
+      }),
+    )
+    renderizar()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Cancelar pedido' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sim, cancelar' }))
+
+    expect(await screen.findByText('Enviado')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar pedido' })).not.toBeInTheDocument()
+  })
+
   it('desistir da confirmação não chama a API', async () => {
     comTokenSalvo()
     const fetchFalso = vi.fn(rotasFalsas({ 'GET /auth/me': [200, maria], 'GET /pedidos/5': [200, pedido()] }))
