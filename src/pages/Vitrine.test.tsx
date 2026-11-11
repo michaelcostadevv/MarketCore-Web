@@ -47,6 +47,34 @@ describe('Vitrine', () => {
     expect(fetchFalso.mock.calls[0][0]).toBe('http://localhost:8080/produtos?page=0&size=12')
   })
 
+  it('anuncia o carregamento para leitores de tela', () => {
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {}))) // nunca responde
+
+    renderizarVitrine()
+
+    expect(screen.getByRole('status')).toHaveTextContent('Carregando produtos…')
+  })
+
+  it('marca a lista como ocupada (aria-busy) enquanto troca de página', async () => {
+    let responder: (r: Response) => void = () => {}
+    const fetchFalso = vi.fn<typeof fetch>((url) =>
+      String(url).includes('page=1')
+        ? new Promise<Response>((r) => (responder = r))
+        : fetchRespondendo(pagina(produtos, { totalPages: 2 }))(url),
+    )
+    vi.stubGlobal('fetch', fetchFalso)
+    renderizarVitrine()
+    await screen.findByText('Teclado')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Próxima' }))
+
+    expect(screen.getByRole('list', { name: 'Produtos' })).toHaveAttribute('aria-busy', 'true')
+    responder(new Response(JSON.stringify(pagina(produtos, { number: 1, totalPages: 2 }))))
+    await vi.waitFor(() =>
+      expect(screen.getByRole('list', { name: 'Produtos' })).toHaveAttribute('aria-busy', 'false'),
+    )
+  })
+
   it('mostra aviso quando não há produtos', async () => {
     vi.stubGlobal('fetch', vi.fn(fetchRespondendo(pagina([]))))
 

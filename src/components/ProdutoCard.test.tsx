@@ -31,19 +31,21 @@ describe('ProdutoCard', () => {
     expect(screen.getByRole('link')).toHaveAttribute('href', '/produtos/7')
   })
 
-  it('mostra a imagem quando há imagemUrl', () => {
-    renderizar(teclado)
+  it('mostra a imagem como decorativa (alt vazio): o nome já está no título do card', () => {
+    const { container } = renderizar(teclado)
 
-    expect(screen.getByRole('img', { name: 'Teclado Mecânico' })).toHaveAttribute(
-      'src',
-      'https://exemplo.com/teclado.png',
-    )
+    const imagem = container.querySelector('img')
+    expect(imagem).toHaveAttribute('src', 'https://exemplo.com/teclado.png')
+    expect(imagem).toHaveAttribute('alt', '')
+    // o link é lido uma vez só, com o nome do produto, e não "Teclado Mecânico, Teclado Mecânico..."
+    expect(screen.getByRole('link')).toHaveAccessibleName(/^Teclado Mecânico/)
+    expect(screen.queryByRole('img', { name: 'Teclado Mecânico' })).not.toBeInTheDocument()
   })
 
   it('mostra um placeholder (e nenhum <img>) quando imagemUrl é nula', () => {
-    renderizar({ ...teclado, imagemUrl: null })
+    const { container } = renderizar({ ...teclado, imagemUrl: null })
 
-    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+    expect(container.querySelector('img')).toBeNull()
     expect(screen.getByText('Sem imagem')).toBeInTheDocument()
   })
 

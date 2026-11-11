@@ -57,6 +57,7 @@ describe('Carrinho', () => {
     renderizarCarrinho()
 
     const itemTeclado = screen.getByRole('listitem', { name: 'Teclado' })
+    expect(itemTeclado).not.toHaveAttribute('aria-label') // nome vem do link do produto (aria-labelledby)
     expect(within(itemTeclado).getByText(/R\$\s399,80/)).toBeInTheDocument()
     expect(screen.getByTestId('total')).toHaveTextContent(/R\$\s449,80/)
   })

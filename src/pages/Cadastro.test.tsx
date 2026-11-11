@@ -73,6 +73,11 @@ describe('Cadastro', () => {
     const alerta = await screen.findByRole('alert')
     expect(alerta).toHaveTextContent('Dados inválidos')
     expect(alerta).toHaveTextContent('password: A senha deve ter entre 8 e 72 caracteres')
+    expect(alerta).toHaveFocus()
+    // só o campo que a API recusou é marcado como inválido ("password" na API = campo Senha)
+    expect(screen.getByLabelText('Senha')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Nome')).not.toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Senha')).toHaveAccessibleDescription(/Entre 8 e 72 caracteres.*Dados inválidos/)
   })
 
   it('mostra a mensagem de e-mail já cadastrado (409)', async () => {

@@ -51,6 +51,17 @@ describe('ProdutoDetalhe', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Você já tem todo o estoque disponível (5) no carrinho.')
   })
 
+  it('no detalhe, a imagem tem o nome do produto como texto alternativo', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(rotasFalsas({ 'GET /produtos/1': [200, { ...teclado, imagemUrl: 'https://exemplo.com/t.png' }] })),
+    )
+
+    renderizar('/produtos/1')
+
+    expect(await screen.findByRole('img', { name: 'Teclado' })).toHaveAttribute('src', 'https://exemplo.com/t.png')
+  })
+
   it('produto esgotado não pode ir para o carrinho', async () => {
     vi.stubGlobal('fetch', vi.fn(rotasFalsas({ 'GET /produtos/1': [200, { ...teclado, quantidade: 0 }] })))
 

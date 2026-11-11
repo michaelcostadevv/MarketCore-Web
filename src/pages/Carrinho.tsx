@@ -163,11 +163,11 @@ function LinhaCarrinho({ item }: { item: ItemCarrinho }) {
     'h-9 w-9 rounded-lg border border-slate-300 text-lg leading-none text-slate-700 hover:bg-slate-50 disabled:opacity-40'
 
   return (
-    <li aria-label={produto.nome} className="flex flex-wrap items-center gap-4 p-4">
-      <ImagemProduto produto={produto} className="h-16 w-16 shrink-0 rounded-lg text-[10px]" />
+    <li aria-labelledby={`item-${produto.id}`} className="flex flex-wrap items-center gap-4 p-4">
+      <ImagemProduto produto={produto} decorativa className="h-16 w-16 shrink-0 rounded-lg text-[10px]" />
 
       <div className="min-w-0 flex-1">
-        <Link to={`/produtos/${produto.id}`} className="font-medium text-slate-900 hover:text-indigo-700">
+        <Link id={`item-${produto.id}`} to={`/produtos/${produto.id}`} className="font-medium text-slate-900 hover:text-indigo-700">
           {produto.nome}
         </Link>
         <p className="text-sm text-slate-500">{formatarPreco(produto.preco)} cada</p>

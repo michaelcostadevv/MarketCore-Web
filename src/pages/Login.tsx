@@ -5,6 +5,8 @@ import { BotaoPrincipal, Campo, CartaoFormulario } from '../components/Formulari
 import { MensagemErro } from '../components/MensagemErro'
 import { destinoSeguro } from '../lib/destino'
 
+const ID_ERRO = 'erro-login'
+
 export function Login() {
   const { usuario, carregando, login } = useAuth()
   const navigate = useNavigate()
@@ -35,9 +37,24 @@ export function Login() {
   return (
     <CartaoFormulario titulo="Entrar">
       <form onSubmit={enviar} className="flex flex-col gap-4">
-        <Campo rotulo="E-mail" name="email" type="email" autoComplete="email" autoFocus />
-        <Campo rotulo="Senha" name="senha" type="password" autoComplete="current-password" />
-        {erro !== null && <MensagemErro erro={erro} />}
+        {/* aria-describedby liga os campos à mensagem de erro: ao voltar a um campo,
+            o leitor de tela lê o rótulo e em seguida o erro */}
+        <Campo
+          rotulo="E-mail"
+          name="email"
+          type="email"
+          autoComplete="email"
+          autoFocus
+          aria-describedby={erro !== null ? ID_ERRO : undefined}
+        />
+        <Campo
+          rotulo="Senha"
+          name="senha"
+          type="password"
+          autoComplete="current-password"
+          aria-describedby={erro !== null ? ID_ERRO : undefined}
+        />
+        {erro !== null && <MensagemErro erro={erro} id={ID_ERRO} focar />}
         <BotaoPrincipal enviando={enviando}>{enviando ? 'Entrando…' : 'Entrar'}</BotaoPrincipal>
       </form>
       <p className="mt-6 text-center text-sm text-slate-600">
