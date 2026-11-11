@@ -106,3 +106,29 @@ describe('Vitrine', () => {
     expect(await screen.findByRole('button', { name: 'Anterior' })).toBeDisabled()
   })
 })
+
+describe('Vitrine com página inválida na URL', () => {
+  it.each(['abc', '1.5', '1e10', '-3'])('?pagina=%s vira a página 1', async (valor) => {
+    const fetchFalso = vi.fn(fetchRespondendo(pagina(produtos, { totalPages: 3 })))
+    vi.stubGlobal('fetch', fetchFalso)
+
+    renderizarVitrine(`/?pagina=${valor}`)
+
+    expect(await screen.findByText('Página 1 de 3')).toBeInTheDocument()
+    expect(fetchFalso.mock.calls[0][0]).toBe('http://localhost:8080/produtos?page=0&size=12')
+  })
+
+  it('volta para a última página quando a URL pede uma página que não existe', async () => {
+    const paginaVazia = fetchRespondendo(pagina([], { number: 8, totalPages: 3 }))
+    const ultimaPagina = fetchRespondendo(pagina(produtos, { number: 2, totalPages: 3 }))
+    const fetchFalso = vi.fn<typeof fetch>((url, init) =>
+      String(url).includes('page=8') ? paginaVazia(url, init) : ultimaPagina(url, init),
+    )
+    vi.stubGlobal('fetch', fetchFalso)
+
+    renderizarVitrine('/?pagina=9')
+
+    expect(await screen.findByText('Página 3 de 3')).toBeInTheDocument()
+    expect(fetchFalso).toHaveBeenLastCalledWith('http://localhost:8080/produtos?page=2&size=12', expect.anything())
+  })
+})

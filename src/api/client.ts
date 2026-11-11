@@ -4,7 +4,8 @@ import type { ErroApi } from './types'
  * Endereço da API. Vem de VITE_API_URL (arquivo .env); sem ele, usa a API local.
  * Só variáveis com prefixo VITE_ chegam ao navegador, então nunca coloque segredos aqui.
  */
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
+// || (e não ??) para que VITE_API_URL= (vazia) também use o padrão
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 /** Erro de qualquer chamada à API, já no formato que as telas precisam para exibir. */
 export class ApiError extends Error {
@@ -63,7 +64,11 @@ export async function api<T>(caminho: string, init: RequestInit = {}): Promise<T
   }
 
   if (resposta.status === 204) return undefined as T
-  return (await lerJson<T>(resposta)) as T
+  const dados = await lerJson<T>(resposta)
+  // Sucesso sem JSON (ex.: VITE_API_URL errada devolvendo uma página HTML): melhor um erro claro
+  // do que entregar null para a tela e quebrá-la mais adiante
+  if (dados === null) throw new ApiError(resposta.status, 'Resposta inválida da API')
+  return dados
 }
 
 /** Lê o corpo como JSON; devolve null se vier vazio ou não for JSON (ex.: 403 sem corpo). */

@@ -4,12 +4,13 @@ import { useProduto } from '../api/produtos'
 import { MensagemErro } from '../components/MensagemErro'
 import { ImagemProduto } from '../components/ProdutoCard'
 import { formatarPreco } from '../lib/formatar'
+import { lerInteiroPositivo } from '../lib/numeros'
 import { NaoEncontrada } from './NaoEncontrada'
 
 export function ProdutoDetalhe() {
-  const id = Number(useParams().id)
-  // "/produtos/abc" não deve nem chamar a API
-  if (!Number.isInteger(id) || id <= 0) return <NaoEncontrada mensagem="Produto não encontrado" />
+  const id = lerInteiroPositivo(useParams().id)
+  // "/produtos/abc" ou "/produtos/1e30" não devem nem chamar a API
+  if (id === null) return <NaoEncontrada mensagem="Produto não encontrado" />
   return <Detalhe id={id} />
 }
 

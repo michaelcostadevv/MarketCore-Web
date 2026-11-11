@@ -1,9 +1,10 @@
-import { type FormEvent } from 'react'
+import { type FormEvent, useEffect } from 'react'
 import { useSearchParams } from 'react-router'
 import { useProdutos } from '../api/produtos'
 import { MensagemErro } from '../components/MensagemErro'
 import { Paginacao } from '../components/Paginacao'
 import { ProdutoCard } from '../components/ProdutoCard'
+import { lerInteiroPositivo } from '../lib/numeros'
 
 const POR_PAGINA = 12
 
@@ -12,13 +13,24 @@ export function Vitrine() {
   // e os botões voltar/avançar do navegador funcionam sem nenhum código extra.
   const [params, setParams] = useSearchParams()
   const nome = params.get('nome') ?? ''
-  const pagina = Math.max(1, Number(params.get('pagina')) || 1)
+  const pagina = lerInteiroPositivo(params.get('pagina')) ?? 1 // valores inválidos viram a página 1
 
   const { data, isPending, isError, error, isPlaceholderData } = useProdutos({
     nome: nome || undefined,
     page: pagina - 1, // a API conta páginas a partir de 0
     size: POR_PAGINA,
   })
+
+  // Link antigo ou digitado à mão (?pagina=9 com só 3 páginas): leva para a última página.
+  // replace: true troca a URL sem criar uma entrada nova no histórico do botão voltar.
+  const totalPaginas = data?.page.totalPages ?? 0
+  useEffect(() => {
+    if (totalPaginas > 0 && pagina > totalPaginas) {
+      const corrigidos = new URLSearchParams(params)
+      corrigidos.set('pagina', String(totalPaginas))
+      setParams(corrigidos, { replace: true })
+    }
+  }, [pagina, totalPaginas, params, setParams])
 
   function buscar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault() // impede o navegador de recarregar a página

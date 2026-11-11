@@ -131,3 +131,13 @@ describe('deveTentarDeNovo()', () => {
     expect(deveTentarDeNovo(1, new ApiError(503, 'Indisponível'))).toBe(false)
   })
 })
+
+describe('api() com resposta 2xx inválida', () => {
+  it('lança ApiError quando a resposta de sucesso não é JSON (ex.: VITE_API_URL errada devolvendo HTML)', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('<!doctype html><html></html>', { status: 200 })))
+
+    const erro = await api('/produtos').catch((e: unknown) => e)
+
+    expect(erro).toMatchObject({ status: 200, message: 'Resposta inválida da API' })
+  })
+})
