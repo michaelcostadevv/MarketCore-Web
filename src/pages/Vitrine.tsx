@@ -87,7 +87,10 @@ export function Vitrine() {
         </p>
       ) : (
         <>
+          {/* aria-busy: enquanto a próxima página carrega, a lista mostrada ainda é a anterior */}
           <ul
+            aria-label="Produtos"
+            aria-busy={isPlaceholderData}
             className={`grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 ${isPlaceholderData ? 'opacity-60' : ''}`}
           >
             {data.content.map((produto) => (
@@ -105,10 +108,14 @@ export function Vitrine() {
 
 function GradeCarregando() {
   return (
-    <ul aria-label="Carregando produtos" className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-      {Array.from({ length: 8 }, (_, i) => (
-        <li key={i} className="aspect-[3/4] animate-pulse rounded-xl bg-slate-200" />
-      ))}
-    </ul>
+    <div role="status">
+      {/* Texto só para leitores de tela; os blocos cinza são só visuais (aria-hidden) */}
+      <span className="sr-only">Carregando produtos…</span>
+      <ul aria-hidden="true" className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: 8 }, (_, i) => (
+          <li key={i} className="aspect-[3/4] animate-pulse rounded-xl bg-slate-200" />
+        ))}
+      </ul>
+    </div>
   )
 }

@@ -50,6 +50,25 @@ describe('Login', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('E-mail ou senha inválidos')
   })
 
+  it('depois de um erro, leva o foco para a mensagem e liga os campos a ela', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        rotasFalsas({
+          'POST /auth/login': [401, { status: 401, mensagem: 'E-mail ou senha inválidos', detalhes: [] }],
+        }),
+      ),
+    )
+    renderizarLogin()
+
+    await preencherEEntrar()
+
+    const alerta = await screen.findByRole('alert')
+    expect(alerta).toHaveFocus() // quem usa teclado não volta para o topo da página
+    expect(screen.getByLabelText('E-mail')).toHaveAccessibleDescription('E-mail ou senha inválidos')
+    expect(screen.getByLabelText('Senha')).toHaveAccessibleDescription('E-mail ou senha inválidos')
+  })
+
   it('envia e-mail e senha no formato da API e vai para a vitrine', async () => {
     const fetchFalso = vi.fn(loginOk)
     vi.stubGlobal('fetch', fetchFalso)

@@ -10,7 +10,8 @@ export function ProdutoCard({ produto }: { produto: Produto }) {
       to={`/produtos/${produto.id}`}
       className="group flex w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-indigo-300 hover:shadow-md"
     >
-      <ImagemProduto produto={produto} className="aspect-square" />
+      {/* decorativa: o nome já está no título logo abaixo; com alt o leitor de tela leria duas vezes */}
+      <ImagemProduto produto={produto} decorativa className="aspect-square" />
 
       <div className="flex flex-1 flex-col gap-1 p-4">
         <h2 className="line-clamp-2 font-medium text-slate-900 group-hover:text-indigo-700">
@@ -33,10 +34,22 @@ export function ProdutoCard({ produto }: { produto: Produto }) {
  * Imagem do produto ou um placeholder. imagemUrl é opcional na API: sem esta checagem
  * o navegador tentaria carregar src="null" e mostraria um ícone de imagem quebrada.
  */
-export function ImagemProduto({ produto, className = '' }: { produto: Produto; className?: string }) {
+export function ImagemProduto({
+  produto,
+  className = '',
+  decorativa = false,
+}: {
+  produto: Produto
+  className?: string
+  /** true quando o nome do produto já aparece em texto ao lado (card, carrinho): alt vazio. */
+  decorativa?: boolean
+}) {
   if (!produto.imagemUrl) {
     return (
-      <div className={`flex items-center justify-center bg-slate-100 text-sm text-slate-400 ${className}`}>
+      <div
+        aria-hidden={decorativa || undefined}
+        className={`flex items-center justify-center bg-slate-100 text-sm text-slate-400 ${className}`}
+      >
         Sem imagem
       </div>
     )
@@ -44,7 +57,7 @@ export function ImagemProduto({ produto, className = '' }: { produto: Produto; c
   return (
     <img
       src={produto.imagemUrl}
-      alt={produto.nome}
+      alt={decorativa ? '' : produto.nome}
       loading="lazy"
       className={`bg-slate-100 object-cover ${className}`}
     />
