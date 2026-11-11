@@ -3,9 +3,10 @@ import { render } from '@testing-library/react'
 import type { ReactElement } from 'react'
 import { MemoryRouter } from 'react-router'
 import { AuthProvider } from '../auth/AuthProvider'
+import { CarrinhoProvider } from '../carrinho/CarrinhoProvider'
 
 /**
- * Renderiza um componente com os mesmos "provedores" do app (Query + Auth + Router).
+ * Renderiza um componente com os mesmos "provedores" do app (Query + Auth + Carrinho + Router).
  * Cada teste ganha um QueryClient novo para o cache de um teste não vazar no outro.
  */
 export function renderizarComProvedores(ui: ReactElement, { rota = '/' } = {}) {
@@ -15,7 +16,9 @@ export function renderizarComProvedores(ui: ReactElement, { rota = '/' } = {}) {
   const resultado = render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <MemoryRouter initialEntries={[rota]}>{ui}</MemoryRouter>
+        <CarrinhoProvider>
+          <MemoryRouter initialEntries={[rota]}>{ui}</MemoryRouter>
+        </CarrinhoProvider>
       </AuthProvider>
     </QueryClientProvider>,
   )
@@ -31,7 +34,7 @@ export function fetchRespondendo(body: unknown, status = 200): typeof fetch {
     )
 }
 
-type RespostaFalsa = [status: number, body?: unknown]
+export type RespostaFalsa = [status: number, body?: unknown]
 
 /**
  * fetch falso que responde conforme "MÉTODO /caminho" (sem a query string).
