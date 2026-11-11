@@ -5,11 +5,12 @@ import { BotaoPrincipal, Campo, CartaoFormulario } from '../components/Formulari
 import { MensagemErro } from '../components/MensagemErro'
 
 export function Cadastro() {
-  const { usuario, cadastrar } = useAuth()
+  const { usuario, carregando, cadastrar } = useAuth()
   const navigate = useNavigate()
   const [erro, setErro] = useState<unknown>(null)
   const [enviando, setEnviando] = useState(false)
 
+  if (carregando) return <p role="status" className="text-center text-slate-500">Carregando…</p>
   if (usuario && !enviando) return <Navigate to="/" replace />
 
   async function enviar(evento: FormEvent<HTMLFormElement>) {

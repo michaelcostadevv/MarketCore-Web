@@ -94,12 +94,40 @@ describe('api()', () => {
 
   it('avisa quando a API responde 401 (token inválido ou expirado)', async () => {
     vi.stubGlobal('fetch', respostaFalsa(401, { status: 401, mensagem: 'Token expirado', detalhes: [] }))
+    setTokenProvider(() => 'abc')
     const aoDesautorizar = vi.fn()
     setOnUnauthorized(aoDesautorizar)
 
     await api('/pedidos').catch(() => {})
 
     expect(aoDesautorizar).toHaveBeenCalledOnce()
+  })
+
+  it('informa qual token recebeu o 401 (para não apagar uma sessão mais nova)', async () => {
+    vi.stubGlobal('fetch', respostaFalsa(401, { status: 401, mensagem: 'Token expirado', detalhes: [] }))
+    setTokenProvider(() => 'tok-velho')
+    const aoDesautorizar = vi.fn()
+    setOnUnauthorized(aoDesautorizar)
+
+    await api('/pedidos').catch(() => {})
+
+    expect(aoDesautorizar).toHaveBeenCalledWith('tok-velho')
+  })
+
+  it('com autenticar: false não envia o token nem avisa o 401 (login com senha errada)', async () => {
+    const fetchFalso = respostaFalsa(401, { status: 401, mensagem: 'E-mail ou senha inválidos', detalhes: [] })
+    vi.stubGlobal('fetch', fetchFalso)
+    setTokenProvider(() => 'tok-atual')
+    const aoDesautorizar = vi.fn()
+    setOnUnauthorized(aoDesautorizar)
+
+    const erro = await api('/auth/login', { method: 'POST', body: '{}' }, { autenticar: false }).catch(
+      (e: unknown) => e,
+    )
+
+    expect(erro).toMatchObject({ status: 401, message: 'E-mail ou senha inválidos' })
+    expect(new Headers(fetchFalso.mock.calls[0][1].headers).has('Authorization')).toBe(false)
+    expect(aoDesautorizar).not.toHaveBeenCalled()
   })
 
   it('envia corpo JSON com Content-Type', async () => {

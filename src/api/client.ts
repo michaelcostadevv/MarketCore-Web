@@ -25,23 +25,32 @@ export class ApiError extends Error {
 // O client não sabe onde o token fica guardado: quem sabe é o módulo de autenticação,
 // que registra estas funções. Assim evitamos dependência circular entre api/ e auth/.
 let obterToken: () => string | null = () => null
-let aoDesautorizar: () => void = () => {}
+let aoDesautorizar: (tokenUsado: string) => void = () => {}
 
 export function setTokenProvider(fn: () => string | null) {
   obterToken = fn
 }
 
-export function setOnUnauthorized(fn: () => void) {
+/**
+ * Registra quem deve ser avisado de um 401. Recebe o token que foi recusado: uma resposta
+ * atrasada de um token antigo não pode derrubar uma sessão que começou depois dela.
+ */
+export function setOnUnauthorized(fn: (tokenUsado: string) => void) {
   aoDesautorizar = fn
+}
+
+type Opcoes = {
+  /** false: não envia o token nem trata 401 como sessão vencida (ex.: login com senha errada). */
+  autenticar?: boolean
 }
 
 /**
  * Faz uma chamada à API e devolve o JSON da resposta já tipado.
  * Respostas fora da faixa 2xx viram ApiError, com a mensagem que a própria API mandou.
  */
-export async function api<T>(caminho: string, init: RequestInit = {}): Promise<T> {
+export async function api<T>(caminho: string, init: RequestInit = {}, { autenticar = true }: Opcoes = {}): Promise<T> {
   const headers = new Headers(init.headers)
-  const token = obterToken()
+  const token = autenticar ? obterToken() : null
   if (token) headers.set('Authorization', `Bearer ${token}`)
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
 
@@ -54,7 +63,7 @@ export async function api<T>(caminho: string, init: RequestInit = {}): Promise<T
   }
 
   if (!resposta.ok) {
-    if (resposta.status === 401) aoDesautorizar()
+    if (resposta.status === 401 && token) aoDesautorizar(token)
     const corpo = await lerJson<Partial<ErroApi>>(resposta)
     throw new ApiError(
       resposta.status,

@@ -12,13 +12,14 @@ export function renderizarComProvedores(ui: ReactElement, { rota = '/' } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } }, // em teste, erro deve aparecer na hora
   })
-  return render(
+  const resultado = render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <MemoryRouter initialEntries={[rota]}>{ui}</MemoryRouter>
       </AuthProvider>
     </QueryClientProvider>,
   )
+  return { ...resultado, queryClient }
 }
 
 /** fetch falso que responde sempre o mesmo JSON. */

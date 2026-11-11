@@ -6,13 +6,15 @@ import { MensagemErro } from '../components/MensagemErro'
 import { destinoSeguro } from '../lib/destino'
 
 export function Login() {
-  const { usuario, login } = useAuth()
+  const { usuario, carregando, login } = useAuth()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const destino = destinoSeguro(params.get('voltar'))
   const [erro, setErro] = useState<unknown>(null)
   const [enviando, setEnviando] = useState(false)
 
+  // Ainda confirmando um token salvo com a API: espera para saber se a pessoa já está logada
+  if (carregando) return <p role="status" className="text-center text-slate-500">Carregando…</p>
   // Já logado (ex.: abriu /login de um favorito): não faz sentido mostrar o formulário
   if (usuario && !enviando) return <Navigate to={destino} replace />
 

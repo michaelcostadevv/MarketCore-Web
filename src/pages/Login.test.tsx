@@ -73,6 +73,15 @@ describe('Login', () => {
     expect(await screen.findByText('página: pedidos')).toBeInTheDocument()
   })
 
+  it('enquanto confirma um token salvo, mostra "Carregando…" em vez do formulário', () => {
+    localStorage.setItem('marketcore.token', 't')
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => {}))) // /auth/me nunca responde
+    renderizarLogin()
+
+    expect(screen.getByRole('status')).toHaveTextContent('Carregando…')
+    expect(screen.queryByRole('button', { name: 'Entrar' })).not.toBeInTheDocument()
+  })
+
   it('ignora ?voltar= que aponta para outro site', async () => {
     vi.stubGlobal('fetch', vi.fn(loginOk))
     renderizarLogin('/login?voltar=%2F%2Fsite-malicioso.com')

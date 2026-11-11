@@ -1,12 +1,22 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { type Query, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { buscarUsuarioLogado, entrar, registrar } from '../api/auth'
 import { setOnUnauthorized, setTokenProvider } from '../api/client'
 import { AuthContext, type ValorAuth } from './contexto'
-import { apagarToken, lerToken, salvarToken } from './token'
+import {
+  adotarTokenDeOutraAba,
+  apagarToken,
+  CHAVE_TOKEN,
+  carregarTokenSalvo,
+  obterToken,
+  salvarToken,
+} from './token'
 
 /** Chave do cache do usuário logado. O token entra na chave: token novo = busca nova. */
 const chaveUsuario = (token: string | null) => ['auth', 'me', token] as const
+
+/** A vitrine é pública; todo o resto do cache (usuário, pedidos...) pertence a quem está logado. */
+const ehDadoPrivado = (query: Query) => query.queryKey[0] !== 'produtos'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
@@ -15,21 +25,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Registra a fonte do token no client HTTP já na primeira renderização, antes de qualquer
     // componente filho fazer chamadas. Os efeitos dos filhos rodam ANTES do useEffect do pai,
     // então registrar num useEffect aqui chegaria tarde para a primeira chamada.
-    setTokenProvider(lerToken)
-    return lerToken()
+    setTokenProvider(obterToken)
+    return carregarTokenSalvo()
   })
 
   const encerrarSessao = useCallback(() => {
     apagarToken()
     setToken(null)
-    queryClient.removeQueries({ queryKey: ['auth'] })
+    queryClient.removeQueries({ predicate: ehDadoPrivado })
   }, [queryClient])
 
-  // Qualquer 401 da API (token vencido ou inválido) encerra a sessão
+  // Um 401 encerra a sessão, mas só se foi o token ATUAL que a API recusou.
+  // Uma resposta atrasada de um token antigo (ex.: login feito no meio do caminho) é ignorada.
   useEffect(() => {
-    setOnUnauthorized(encerrarSessao)
+    setOnUnauthorized((tokenUsado) => {
+      if (tokenUsado === obterToken()) encerrarSessao()
+    })
     return () => setOnUnauthorized(() => {})
   }, [encerrarSessao])
+
+  // Login ou logout em OUTRA aba: o navegador avisa pelo evento "storage"
+  useEffect(() => {
+    function aoMudarEmOutraAba(evento: StorageEvent) {
+      if (evento.key !== CHAVE_TOKEN && evento.key !== null) return // key null = localStorage.clear()
+      const novo = evento.key === null ? null : evento.newValue
+      adotarTokenDeOutraAba(novo)
+      queryClient.removeQueries({ predicate: ehDadoPrivado })
+      setToken(novo)
+    }
+    window.addEventListener('storage', aoMudarEmOutraAba)
+    return () => window.removeEventListener('storage', aoMudarEmOutraAba)
+  }, [queryClient])
 
   const { data: usuario, isPending } = useQuery({
     queryKey: chaveUsuario(token),
@@ -49,12 +75,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           staleTime: Infinity,
         })
       } catch (erro) {
-        apagarToken()
+        encerrarSessao()
         throw erro
       }
       setToken(novoToken)
+      // Troca de usuário: descarta o que era da sessão anterior, mantendo o usuário novo
+      queryClient.removeQueries({
+        predicate: (q) => ehDadoPrivado(q) && q.queryKey[2] !== novoToken,
+      })
     },
-    [queryClient],
+    [queryClient, encerrarSessao],
   )
 
   const valor = useMemo<ValorAuth>(
