@@ -1,5 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../auth/useAuth'
+import { useCarrinho } from '../carrinho/useCarrinho'
 import { LimiteDeErro } from './LimiteDeErro'
 
 /** Estrutura comum a todas as páginas: cabeçalho, conteúdo (Outlet) e rodapé. */
@@ -13,7 +14,10 @@ export function Layout() {
           <Link to="/" className="text-lg font-bold tracking-tight text-slate-900">
             Market<span className="text-indigo-600">Core</span>
           </Link>
-          <MenuUsuario />
+          <div className="flex items-center gap-1 sm:gap-3">
+            <LinkCarrinho />
+            <MenuUsuario />
+          </div>
         </div>
       </header>
 
@@ -28,6 +32,29 @@ export function Layout() {
         MarketCore · projeto de estudo
       </footer>
     </div>
+  )
+}
+
+/** Ícone do carrinho com a quantidade de itens. */
+function LinkCarrinho() {
+  const { quantidadeItens } = useCarrinho()
+  return (
+    <Link
+      to="/carrinho"
+      aria-label={`Carrinho, ${quantidadeItens} ${quantidadeItens === 1 ? 'item' : 'itens'}`}
+      className="relative rounded-lg p-2 text-slate-700 hover:bg-slate-100"
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-6 w-6">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.7a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2" />
+        <circle cx="9.5" cy="20" r="1.2" />
+        <circle cx="17.5" cy="20" r="1.2" />
+      </svg>
+      {quantidadeItens > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1 text-[11px] font-semibold text-white">
+          {quantidadeItens > 99 ? '99+' : quantidadeItens}
+        </span>
+      )}
+    </Link>
   )
 }
 
@@ -60,8 +87,13 @@ function MenuUsuario() {
   }
 
   return (
-    <nav className="flex items-center gap-3 text-sm">
-      <span className="max-w-[10rem] truncate text-slate-600 sm:max-w-xs" title={usuario.email}>
+    <nav className="flex items-center gap-1 text-sm sm:gap-3">
+      <Link to="/pedidos" className="rounded-lg px-3 py-2 font-medium text-slate-700 hover:bg-slate-100">
+        <span className="sm:hidden">Pedidos</span>
+        <span className="hidden sm:inline">Meus pedidos</span>
+      </Link>
+      {/* No celular o espaço é curto: a saudação só aparece em telas maiores */}
+      <span className="hidden max-w-xs truncate text-slate-600 md:inline" title={usuario.email}>
         Olá, <span className="font-medium text-slate-900">{usuario.nome ?? usuario.email}</span>
       </span>
       {usuario.admin && (
